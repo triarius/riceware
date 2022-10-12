@@ -13,6 +13,9 @@ struct Args {
 
     #[arg(short, long, default_value = " ")]
     seperator: String,
+
+    #[arg(short, long)]
+    dict_path: Option<String>,
 }
 
 lazy_static! {
@@ -22,13 +25,22 @@ lazy_static! {
 fn main() {
     let args = Args::parse();
 
-    let mut words: Vec<String> = words::words("/usr/share/dict/words")
+    let mut words: Vec<String> = words::words(args.dict_path)
         .iter()
         .filter(|w| RE.is_match(w))
         .map(|x| x.to_owned())
         .collect();
 
     let mut rng = rand::thread_rng();
+
+    if words.len() < args.num_words {
+        eprintln!(
+            "Your dictionary only has {} suitable words, but you asked for {} words.",
+            words.len(),
+            args.num_words
+        );
+        return;
+    }
 
     (0..args.num_words).for_each(|i| {
         let j = rng.gen_range(0..words.len());
