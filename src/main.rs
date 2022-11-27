@@ -2,7 +2,7 @@ mod words;
 
 use clap::Parser;
 use lazy_static::lazy_static;
-use rand::Rng;
+use rand::{rngs::ThreadRng, Rng};
 use regex::Regex;
 
 #[derive(Parser, Debug)]
@@ -33,24 +33,34 @@ fn main() {
 
     let mut rng = rand::thread_rng();
 
-    if words.len() < args.num_words {
+    println!(
+        "{}",
+        passphrase(&mut rng, &mut words, args.num_words, &args.separator)
+    )
+}
+
+fn passphrase(
+    rng: &mut ThreadRng,
+    words: &mut Vec<String>,
+    num_words: usize,
+    separator: &str,
+) -> String {
+    if words.len() < num_words {
         eprintln!(
             "Your dictionary only has {} suitable words, but you asked for {} words.",
             words.len(),
-            args.num_words
+            num_words
         );
-        return;
+        return "".to_string();
     }
 
-    (0..args.num_words).for_each(|i| {
+    (0..num_words).for_each(|i| {
         let j = rng.gen_range(0..words.len());
         words.swap(i, j)
     });
 
-    let passphrase = (0..args.num_words)
+    (0..num_words)
         .map(|i| (&words[i]).to_owned())
         .collect::<Vec<String>>()
-        .join(&args.separator);
-
-    println!("{}", passphrase)
+        .join(separator)
 }
