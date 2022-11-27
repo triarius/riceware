@@ -12,7 +12,7 @@ struct Args {
     num_words: usize,
 
     #[arg(short, long, default_value = " ")]
-    seperator: String,
+    separator: String,
 
     #[arg(short, long)]
     dict_path: Option<String>,
@@ -50,7 +50,7 @@ fn main() {
     let passphrase = (0..args.num_words)
         .map(|i| (&words[i]).to_owned())
         .collect::<Vec<String>>()
-        .join(&args.seperator);
+        .join(&args.separator);
 
     println!("{}", passphrase)
 }
