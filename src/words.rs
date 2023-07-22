@@ -14,7 +14,7 @@ pub(crate) fn words(path: Option<impl AsRef<Path>>) -> Vec<String> {
 fn words_from_fixture() -> Vec<String> {
     let bytes = include_bytes!("fixtures/words");
     let string = String::from_utf8_lossy(bytes);
-    string.split("\n").map(|l| l.to_owned()).collect()
+    string.split('\n').map(|l| l.to_owned()).collect()
 }
 
 fn words_from_file(path: impl AsRef<Path>) -> Vec<String> {
