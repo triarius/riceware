@@ -1,5 +1,5 @@
 on: [push, pull_request]
-name: Clippy
+name: CI
 jobs:
   build:
     runs-on: ubuntu-latest
