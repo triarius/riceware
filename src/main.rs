@@ -60,7 +60,7 @@ fn passphrase(
     });
 
     (0..num_words)
-        .map(|i| (words[i].to_owned()))
+        .map(|i| words[i].to_owned())
         .collect::<Vec<String>>()
         .join(separator)
 }
