@@ -1,6 +1,7 @@
 mod words;
 
 use clap::Parser;
+use eyre::Result;
 use lazy_static::lazy_static;
 use rand::{rngs::ThreadRng, Rng};
 use regex::Regex;
@@ -22,10 +23,10 @@ lazy_static! {
     static ref RE: Regex = Regex::new("^[a-z]{4,}$").unwrap();
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
 
-    let mut words: Vec<String> = words::words(args.dict_path)
+    let mut words: Vec<String> = words::words(args.dict_path)?
         .iter()
         .filter(|w| RE.is_match(w))
         .map(|x| x.to_owned())
@@ -36,7 +37,9 @@ fn main() {
     println!(
         "{}",
         passphrase(&mut rng, &mut words, args.num_words, &args.separator)
-    )
+    );
+
+    Ok(())
 }
 
 fn passphrase(
