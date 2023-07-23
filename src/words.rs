@@ -31,7 +31,7 @@ fn words_from_file(path: impl AsRef<Path>) -> Result<Vec<String>> {
     let file = File::open(path)?;
     Ok(BufReader::new(file)
         .lines()
-        .filter_map(|l| l.ok())
+        .map_while(|l| l.ok())
         .filter(|w| RE.is_match(w))
         .collect())
 }
