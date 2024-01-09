@@ -32,34 +32,45 @@ mod test {
     // to test that the passphrases are uniformly distributed.
     fn chi_squared() {
         use crate::{passphrase, words};
+        use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
         use statrs::distribution::{ChiSquared, ContinuousCDF};
         use std::collections::HashMap;
 
         // This test file has W = 4 words, which can have 24 permutations
         const W: usize = 4;
         const W_FACTORIAL: usize = 24;
-        const N: usize = 1_200_000; // number of samples
+        const N: usize = 12_000_000; // number of samples
 
         let words = words::list(Some("src/fixtures/test")).unwrap();
 
-        let mut rng = rand::thread_rng();
-        let histogram = (1..N).fold(HashMap::new(), |mut acc, _| {
-            let mut words = words.clone();
-            let s = passphrase::new(&mut rng, &mut words, W, " ");
-            *acc.entry(s).or_insert(0) += 1 as usize;
-            acc
-        });
+        let histogram = Vec::from_iter(0..N)
+            .par_iter()
+            .fold_chunks(
+                N / std::thread::available_parallelism().unwrap(),
+                || HashMap::new(),
+                |mut acc, _| {
+                    let mut rng = rand::thread_rng();
+                    let mut words = words.clone();
+                    let s = passphrase::new(&mut rng, &mut words, W, " ");
+                    *acc.entry(s).or_insert(0) += 1 as usize;
+                    acc
+                },
+            )
+            .collect::<Vec<HashMap<String, usize>>>()
+            .iter()
+            .fold(HashMap::new(), |mut acc, h| {
+                h.iter().for_each(|(k, v)| {
+                    *acc.entry(k.to_owned()).or_insert(0) += v;
+                });
+                acc
+            });
+
+        assert_eq!(histogram.values().sum::<usize>(), N, "missing samples");
 
         // There should be at most W! different passphrases. If, by chance, some of them are not
         // generated, then the chi-squared test is highly unlikely to conclude that they are
         // uniformly distributed.
-        assert_eq!(
-            histogram.len(),
-            W_FACTORIAL,
-            "expected there to be {} different passphrases, but there were {}",
-            W_FACTORIAL,
-            histogram.len(),
-        );
+        assert_eq!(W_FACTORIAL, histogram.len(), "missing a permutation");
 
         let expected_frequency = N as f64 / W_FACTORIAL as f64;
         let chi_squared_stat: f64 = histogram
