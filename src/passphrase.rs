@@ -12,16 +12,16 @@ pub fn new(
             words.len(),
             num_words
         );
-        return "".to_string();
+        return String::new();
     }
 
     (0..num_words).for_each(|i| {
         let j = rng.gen_range(i..words.len());
-        words.swap(i, j)
+        words.swap(i, j);
     });
 
     (0..num_words)
-        .map(|i| words[i].to_owned())
+        .map(|i| words[i].clone())
         .collect::<Vec<String>>()
         .join(separator)
 }
