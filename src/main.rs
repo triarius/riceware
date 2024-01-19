@@ -7,12 +7,15 @@ use eyre::Result;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    /// The number of words in the passphrase
     #[arg(short, long, default_value = "4")]
     num_words: usize,
 
+    /// The string to separate words in the passphrase
     #[arg(short, long, default_value = " ")]
     separator: String,
 
+    /// A path to a dictionary file. A builtin dictionary is used if not provided.
     #[arg(short, long)]
     dict_path: Option<String>,
 }
