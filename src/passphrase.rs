@@ -1,11 +1,6 @@
 use rand::{rngs::ThreadRng, Rng};
 
-pub fn new(
-    rng: &mut ThreadRng,
-    words: &mut Vec<String>,
-    num_words: usize,
-    separator: &str,
-) -> String {
+pub fn new(rng: &mut ThreadRng, words: &mut [String], num_words: usize, separator: &str) -> String {
     if words.len() < num_words {
         eprintln!(
             "Your dictionary only has {} suitable words, but you asked for {} words.",
