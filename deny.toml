@@ -1,4 +1,5 @@
 [licenses]
 allow = [
-  "MIT"
+  "MIT",
+  "Unicode-DFS-2016",
 ]
