@@ -27,11 +27,13 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-
         inherit (pkgs) lib;
-
         craneLib = crane.lib.${system};
-        src = craneLib.cleanCargoSource (craneLib.path ./.);
+
+        fixturesFilter = path: _type: builtins.match ".*/fixtures/.*" path != null;
+        fixturesOrCargo = path: type: (fixturesFilter path type) || (craneLib.filterCargoSources path type);
+
+        src = lib.cleanSourceWith { src = craneLib.path ./.; filter = fixturesOrCargo; };
 
         # Common arguments can be set here to avoid repeating them later
         commonArgs = {
@@ -79,7 +81,7 @@
           # prevent downstream consumers from building our crate by itself.
           riceware-clippy = craneLib.cargoClippy (commonArgs // {
             inherit cargoArtifacts;
-            cargoClippyExtraArgs = "--all-targets -- --deny warnings --deny clippy::pedeantic --deny clippy::all";
+            cargoClippyExtraArgs = "--all-targets -- --deny warnings --deny clippy::pedantic --deny clippy::all";
           });
 
           riceware-doc = craneLib.cargoDoc (commonArgs // {
