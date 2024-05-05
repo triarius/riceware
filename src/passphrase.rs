@@ -36,27 +36,33 @@ mod test {
         const W_FACTORIAL: usize = 24;
         const N: usize = 12_000_000; // number of samples
 
+        // Since the number in any permutation is determined by the number in all the others,
+        // degrees of freedom = number of permutations - 1
+        #[allow(clippy::cast_precision_loss)]
+        const DF: f64 = (W_FACTORIAL - 1) as f64;
+
         let words = words::list(Some("src/fixtures/test")).unwrap();
 
-        let histogram = Vec::from_iter(0..N)
+        let histogram = (0..N)
+            .collect::<Vec<_>>()
             .par_iter()
             .fold_chunks(
                 N / std::thread::available_parallelism().unwrap(),
-                || HashMap::new(),
+                HashMap::new,
                 |mut acc, _| {
                     let mut rng = rand::thread_rng();
                     let mut words = words.clone();
                     let s = passphrase::new(&mut rng, &mut words, W, " ");
-                    *acc.entry(s).or_insert(0) += 1 as usize;
+                    *acc.entry(s).or_insert(0) += 1_usize;
                     acc
                 },
             )
             .collect::<Vec<HashMap<String, usize>>>()
             .iter()
             .fold(HashMap::new(), |mut acc, h| {
-                h.iter().for_each(|(k, v)| {
-                    *acc.entry(k.to_owned()).or_insert(0) += v;
-                });
+                for e in h {
+                    *acc.entry(e.0.to_owned()).or_insert(0) += e.1;
+                }
                 acc
             });
 
@@ -67,15 +73,14 @@ mod test {
         // uniformly distributed.
         assert_eq!(W_FACTORIAL, histogram.len(), "missing a permutation");
 
+        #[allow(clippy::cast_precision_loss)]
         let expected_frequency = N as f64 / W_FACTORIAL as f64;
+        #[allow(clippy::cast_precision_loss)]
         let chi_squared_stat: f64 = histogram
             .values()
             .map(|v| (*v as f64 - expected_frequency).powi(2) / expected_frequency)
             .sum();
 
-        // Since the number in any permutation is determined by the number in all the others,
-        // degrees of freedom = number of permutations - 1
-        const DF: f64 = (W_FACTORIAL - 1) as f64;
         let dist = ChiSquared::new(DF).unwrap();
 
         // The p-value is the area under the chi-squared pdf to the right of the chi_squared_stat
@@ -86,9 +91,7 @@ mod test {
         // If we can reject the null hypothesis, then the passphrase generator may not be uniform.
         assert!(
             p > 0.05,
-            "passphrase may not be uniformly random. (p = {} <= 0.05, χ^2 = {}).",
-            p,
-            chi_squared_stat,
+            "passphrase may not be uniformly random. (p = {p} <= 0.05, χ^2 = {chi_squared_stat}).",
         );
     }
 }
