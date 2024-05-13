@@ -1,6 +1,8 @@
 mod passphrase;
 mod words;
 
+use std::io::IsTerminal;
+
 use clap::Parser;
 use eyre::Result;
 
@@ -25,10 +27,14 @@ fn main() -> Result<()> {
     let mut words: Vec<String> = words::list(args.dict_path)?;
     let mut rng = rand::thread_rng();
 
-    println!(
+    print!(
         "{}",
         passphrase::new(&mut rng, &mut words, args.num_words, &args.separator)
     );
+
+    if std::io::stdout().is_terminal() {
+        println!();
+    }
 
     Ok(())
 }
