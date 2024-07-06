@@ -1,6 +1,6 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::Rng;
 
-pub fn new(rng: &mut ThreadRng, words: &mut [String], num_words: usize, separator: &str) -> String {
+pub fn new<T: Rng>(mut rng: T, words: &mut [String], num_words: usize, separator: &str) -> String {
     if words.len() < num_words {
         eprintln!(
             "Your dictionary only has {} suitable words, but you asked for {} words.",
@@ -27,9 +27,11 @@ mod test {
     // to test that the passphrases are uniformly distributed.
     fn chi_squared() {
         use crate::{passphrase, words};
+        use itertools::Itertools;
+        use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
         use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
         use statrs::distribution::{ChiSquared, ContinuousCDF};
-        use std::collections::HashMap;
+        use std::{collections::HashMap, env};
 
         // This test file has W = 4 words, which can have 24 permutations
         const W: usize = 4;
@@ -41,32 +43,52 @@ mod test {
         #[allow(clippy::cast_precision_loss)]
         const DF: f64 = (W_FACTORIAL - 1) as f64;
 
+        let batches = std::thread::available_parallelism().unwrap();
         let words = words::list(Some("src/fixtures/test")).unwrap();
+        let seed = env::var("TEST_SEED")
+            .map_err(|_| eyre::eyre!("TEST_SEED environment variable not set"))
+            .and_then(|s| s.parse().map_err(|_| eyre::eyre!("invalid SEED")))
+            .unwrap_or_else(|_| {
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs()
+            });
+
+        eprintln!("Available parallelism: {batches}");
+        eprintln!("Number of samples: {N}");
+        eprintln!("Seed: {seed}");
 
         let histogram = (0..N)
             .collect::<Vec<_>>()
             .par_iter()
-            .fold_chunks(
-                N / std::thread::available_parallelism().unwrap(),
-                HashMap::new,
-                |mut acc, _| {
-                    let mut rng = rand::thread_rng();
-                    let mut words = words.clone();
-                    let s = passphrase::new(&mut rng, &mut words, W, " ");
-                    *acc.entry(s).or_insert(0) += 1_usize;
-                    acc
-                },
-            )
+            .fold_chunks(N / batches, HashMap::new, |mut acc, i| {
+                let mut rng = ChaCha8Rng::seed_from_u64(seed);
+                rng.set_stream(*i as u64);
+                let mut words = words.clone();
+                let s = passphrase::new(&mut rng, &mut words, W, " ");
+                *acc.entry(s).or_insert(0) += 1_usize;
+                acc
+            })
             .collect::<Vec<HashMap<String, usize>>>()
             .iter()
             .fold(HashMap::new(), |mut acc, h| {
-                for e in h {
-                    *acc.entry(e.0.to_owned()).or_insert(0) += e.1;
+                for (k, v) in h {
+                    *acc.entry(k.to_owned()).or_insert(0) += v;
                 }
                 acc
             });
 
         assert_eq!(histogram.values().sum::<usize>(), N, "missing samples");
+
+        eprintln!("Histogram: {{");
+        histogram
+            .iter()
+            .sorted_by(|(k1, _), (k2, _)| Ord::cmp(k1, k2))
+            .for_each(|(k, v)| {
+                eprintln!("  {k}: {v}");
+            });
+        eprintln!("}}");
 
         // There should be at most W! different passphrases. If, by chance, some of them are not
         // generated, then the chi-squared test is highly unlikely to conclude that they are
