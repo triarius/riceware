@@ -1,6 +1,6 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::Rng;
 
-pub fn new(rng: &mut ThreadRng, words: &mut [String], num_words: usize, separator: &str) -> String {
+pub fn new<T: Rng>(mut rng: T, words: &mut [String], num_words: usize, separator: &str) -> String {
     if words.len() < num_words {
         eprintln!(
             "Your dictionary only has {} suitable words, but you asked for {} words.",
@@ -27,6 +27,7 @@ mod test {
     // to test that the passphrases are uniformly distributed.
     fn chi_squared() {
         use crate::{passphrase, words};
+        use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
         use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
         use statrs::distribution::{ChiSquared, ContinuousCDF};
         use std::collections::HashMap;
@@ -35,6 +36,7 @@ mod test {
         const W: usize = 4;
         const W_FACTORIAL: usize = 24;
         const N: usize = 12_000_000; // number of samples
+        let batches = std::thread::available_parallelism().unwrap();
 
         // Since the number in any permutation is determined by the number in all the others,
         // degrees of freedom = number of permutations - 1
@@ -43,20 +45,21 @@ mod test {
 
         let words = words::list(Some("src/fixtures/test")).unwrap();
 
+        println!("Available parallelism: {}", batches);
+        println!("Number of samples: {}", N);
+
         let histogram = (0..N)
             .collect::<Vec<_>>()
             .par_iter()
-            .fold_chunks(
-                N / std::thread::available_parallelism().unwrap(),
-                HashMap::new,
-                |mut acc, _| {
-                    let mut rng = rand::thread_rng();
-                    let mut words = words.clone();
-                    let s = passphrase::new(&mut rng, &mut words, W, " ");
-                    *acc.entry(s).or_insert(0) += 1_usize;
-                    acc
-                },
-            )
+            .fold_chunks(N / batches, HashMap::new, |mut acc, i| {
+                let seed = *i as u64;
+                let mut rng = ChaCha8Rng::seed_from_u64(seed);
+                rng.set_stream(*i as u64);
+                let mut words = words.clone();
+                let s = passphrase::new(&mut rng, &mut words, W, " ");
+                *acc.entry(s).or_insert(0) += 1_usize;
+                acc
+            })
             .collect::<Vec<HashMap<String, usize>>>()
             .iter()
             .fold(HashMap::new(), |mut acc, h| {
