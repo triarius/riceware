@@ -45,15 +45,19 @@ mod test {
 
         let batches = std::thread::available_parallelism().unwrap();
         let words = words::list(Some("src/fixtures/test")).unwrap();
+        let seed = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
         eprintln!("Available parallelism: {batches}");
         eprintln!("Number of samples: {N}");
+        eprintln!("Seed: {seed}");
 
         let histogram = (0..N)
             .collect::<Vec<_>>()
             .par_iter()
             .fold_chunks(N / batches, HashMap::new, |mut acc, i| {
-                let seed = *i as u64;
                 let mut rng = ChaCha8Rng::seed_from_u64(seed);
                 rng.set_stream(*i as u64);
                 let mut words = words.clone();
