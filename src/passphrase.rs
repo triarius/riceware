@@ -31,7 +31,7 @@ mod test {
         use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
         use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
         use statrs::distribution::{ChiSquared, ContinuousCDF};
-        use std::collections::HashMap;
+        use std::{collections::HashMap, env};
 
         // This test file has W = 4 words, which can have 24 permutations
         const W: usize = 4;
@@ -45,10 +45,15 @@ mod test {
 
         let batches = std::thread::available_parallelism().unwrap();
         let words = words::list(Some("src/fixtures/test")).unwrap();
-        let seed = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let seed = env::var("TEST_SEED")
+            .map_err(|_| eyre::eyre!("TEST_SEED environment variable not set"))
+            .and_then(|s| s.parse().map_err(|_| eyre::eyre!("invalid SEED")))
+            .unwrap_or_else(|_| {
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs()
+            });
 
         eprintln!("Available parallelism: {batches}");
         eprintln!("Number of samples: {N}");
