@@ -37,17 +37,17 @@ mod test {
         const W: usize = 4;
         const W_FACTORIAL: usize = 24;
         const N: usize = 12_000_000; // number of samples
-        let batches = std::thread::available_parallelism().unwrap();
 
         // Since the number in any permutation is determined by the number in all the others,
         // degrees of freedom = number of permutations - 1
         #[allow(clippy::cast_precision_loss)]
         const DF: f64 = (W_FACTORIAL - 1) as f64;
 
+        let batches = std::thread::available_parallelism().unwrap();
         let words = words::list(Some("src/fixtures/test")).unwrap();
 
-        eprintln!("Available parallelism: {}", batches);
-        eprintln!("Number of samples: {}", N);
+        eprintln!("Available parallelism: {batches}");
+        eprintln!("Number of samples: {N}");
 
         let histogram = (0..N)
             .collect::<Vec<_>>()
@@ -77,7 +77,7 @@ mod test {
             .iter()
             .sorted_by(|(k1, _), (k2, _)| Ord::cmp(k1, k2))
             .for_each(|(k, v)| {
-                eprintln!("  {:?}: {}", k, v);
+                eprintln!("  {k}: {v}");
             });
         eprintln!("}}");
 
