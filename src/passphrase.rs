@@ -64,8 +64,8 @@ mod test {
             .collect::<Vec<HashMap<String, usize>>>()
             .iter()
             .fold(HashMap::new(), |mut acc, h| {
-                for e in h {
-                    *acc.entry(e.0.to_owned()).or_insert(0) += e.1;
+                for (k, v) in h {
+                    *acc.entry(k.to_owned()).or_insert(0) += v;
                 }
                 acc
             });
