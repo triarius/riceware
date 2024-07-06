@@ -27,6 +27,7 @@ mod test {
     // to test that the passphrases are uniformly distributed.
     fn chi_squared() {
         use crate::{passphrase, words};
+        use itertools::Itertools;
         use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
         use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
         use statrs::distribution::{ChiSquared, ContinuousCDF};
@@ -45,8 +46,8 @@ mod test {
 
         let words = words::list(Some("src/fixtures/test")).unwrap();
 
-        println!("Available parallelism: {}", batches);
-        println!("Number of samples: {}", N);
+        eprintln!("Available parallelism: {}", batches);
+        eprintln!("Number of samples: {}", N);
 
         let histogram = (0..N)
             .collect::<Vec<_>>()
@@ -70,6 +71,15 @@ mod test {
             });
 
         assert_eq!(histogram.values().sum::<usize>(), N, "missing samples");
+
+        eprintln!("Histogram: {{");
+        histogram
+            .iter()
+            .sorted_by(|(k1, _), (k2, _)| Ord::cmp(k1, k2))
+            .for_each(|(k, v)| {
+                eprintln!("  {:?}: {}", k, v);
+            });
+        eprintln!("}}");
 
         // There should be at most W! different passphrases. If, by chance, some of them are not
         // generated, then the chi-squared test is highly unlikely to conclude that they are
