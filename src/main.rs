@@ -27,11 +27,9 @@ fn main() -> Result<()> {
     let mut words: Vec<String> = words::list(args.dict_path)?;
     let mut rng = rand::thread_rng();
 
-    print!(
-        "{}",
-        passphrase::new(&mut rng, &mut words, args.num_words, &args.separator)
-    );
+    let passphrase = passphrase::new(&mut rng, &mut words, args.num_words, &args.separator)?;
 
+    print!("{passphrase}");
     if std::io::stdout().is_terminal() {
         println!();
     }
