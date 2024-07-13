@@ -77,11 +77,11 @@ mod test {
             })
             .collect::<Vec<HashMap<String, usize>>>()
             .iter()
-            .fold(HashMap::new(), |mut acc, h| {
-                for (k, v) in h {
+            .fold(HashMap::new(), |acc, h| {
+                h.iter().fold(acc, |mut acc, (k, v)| {
                     *acc.entry(k.to_owned()).or_insert(0) += v;
-                }
-                acc
+                    acc
+                })
             });
 
         assert_eq!(histogram.values().sum::<usize>(), N, "missing samples");
