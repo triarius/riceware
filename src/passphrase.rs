@@ -1,13 +1,18 @@
+use eyre::{eyre, Result};
 use rand::Rng;
 
-pub fn new<T: Rng>(mut rng: T, words: &mut [String], num_words: usize, separator: &str) -> String {
+pub fn new<T: Rng>(
+    mut rng: T,
+    words: &mut [String],
+    num_words: usize,
+    separator: &str,
+) -> Result<String> {
     if words.len() < num_words {
-        eprintln!(
+        return Err(eyre!(
             "Your dictionary only has {} suitable words, but you asked for {} words.",
             words.len(),
             num_words
-        );
-        return String::new();
+        ));
     }
 
     (0..num_words).for_each(|i| {
@@ -15,10 +20,10 @@ pub fn new<T: Rng>(mut rng: T, words: &mut [String], num_words: usize, separator
         words.swap(i, j);
     });
 
-    (0..num_words)
+    Ok((0..num_words)
         .map(|i| words[i].clone())
-        .collect::<Vec<String>>()
-        .join(separator)
+        .collect::<Vec<_>>()
+        .join(separator))
 }
 
 mod test {
@@ -66,7 +71,7 @@ mod test {
                 let mut rng = ChaCha8Rng::seed_from_u64(seed);
                 rng.set_stream(*i as u64);
                 let mut words = words.clone();
-                let s = passphrase::new(&mut rng, &mut words, W, " ");
+                let s = passphrase::new(&mut rng, &mut words, W, " ").unwrap();
                 *acc.entry(s).or_insert(0) += 1_usize;
                 acc
             })
