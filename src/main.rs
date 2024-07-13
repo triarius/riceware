@@ -29,7 +29,7 @@ fn main() -> Result<()> {
 
     let passphrase = passphrase::new(&mut rng, &mut words, args.num_words, &args.separator)?;
 
-    print!("{}", passphrase);
+    print!("{passphrase}");
     if std::io::stdout().is_terminal() {
         println!();
     }
