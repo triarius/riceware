@@ -26,12 +26,15 @@ pub fn new<T: Rng>(
         .join(separator))
 }
 
+#[cfg(test)]
 mod test {
-    #[test]
+    use crate::{passphrase, words};
+    use pretty_assertions::assert_eq;
+
     // Uses [Pearson's chi-squared test](https://en.wikipedia.org/wiki/Chi-squared_test#Pearson's_chi-squared_test)
     // to test that the passphrases are uniformly distributed.
+    #[test]
     fn chi_squared() {
-        use crate::{passphrase, words};
         use itertools::Itertools;
         use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
         use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
