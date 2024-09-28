@@ -7,6 +7,8 @@ pub fn new<T: Rng>(
     num_words: usize,
     separator: &str,
 ) -> Result<String> {
+    use itertools::Itertools;
+
     if words.len() < num_words {
         return Err(eyre!(
             "Your dictionary only has {} suitable words, but you asked for {} words.",
@@ -20,10 +22,7 @@ pub fn new<T: Rng>(
         words.swap(i, j);
     });
 
-    Ok((0..num_words)
-        .map(|i| words[i].clone())
-        .collect::<Vec<_>>()
-        .join(separator))
+    Ok((0..num_words).map(|i| &words[i]).join(separator))
 }
 
 #[cfg(test)]
