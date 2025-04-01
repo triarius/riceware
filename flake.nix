@@ -4,10 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-    crane = {
-      url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    crane.url = "github:ipetkov/crane";
 
     fenix = {
       url = "github:nix-community/fenix";
@@ -27,8 +24,10 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+
         inherit (pkgs) lib;
-        craneLib = crane.lib.${system};
+
+        craneLib = crane.mkLib pkgs;
 
         fixturesFilter = path: _type: builtins.match ".*/fixtures/.*" path != null;
         fixturesOrCargo = path: type: (fixturesFilter path type) || (craneLib.filterCargoSources path type);
@@ -93,6 +92,12 @@
             inherit src;
           };
 
+          riceware-toml-fmt = craneLib.taploFmt {
+            src = pkgs.lib.sources.sourceFilesBySuffices src [ ".toml" ];
+            # taplo arguments can be further customized below as needed
+            # taploExtraArgs = "--config ./taplo.toml";
+          };
+
           # Audit dependencies
           riceware-audit = craneLib.cargoAudit {
             inherit src advisory-db;
@@ -110,6 +115,7 @@
             inherit cargoArtifacts;
             partitions = 1;
             partitionType = "count";
+            cargoNextestPartitionsExtraArgs = "--no-tests=pass";
           });
         };
 
