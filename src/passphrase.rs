@@ -1,4 +1,4 @@
-use eyre::{eyre, Result};
+use eyre::{Result, eyre};
 use rand::Rng;
 
 pub fn new<T: Rng>(
@@ -18,7 +18,7 @@ pub fn new<T: Rng>(
     }
 
     (0..num_words).for_each(|i| {
-        let j = rng.gen_range(i..words.len());
+        let j = rng.random_range(i..words.len());
         words.swap(i, j);
     });
 
@@ -35,7 +35,7 @@ mod test {
     #[test]
     fn chi_squared() {
         use itertools::Itertools;
-        use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
+        use rand_chacha::{ChaCha8Rng, rand_core::SeedableRng};
         use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
         use statrs::distribution::{ChiSquared, ContinuousCDF};
         use std::{collections::HashMap, env};

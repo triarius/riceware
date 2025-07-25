@@ -25,7 +25,7 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
     let mut words: Vec<String> = words::list(args.dict_path)?;
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let passphrase = passphrase::new(&mut rng, &mut words, args.num_words, &args.separator)?;
 
