@@ -18,7 +18,7 @@ pub fn new<T: Rng>(
     }
 
     (0..num_words).for_each(|i| {
-        let j = rng.gen_range(i..words.len());
+        let j = rng.random_range(i..words.len());
         words.swap(i, j);
     });
 
