@@ -19,6 +19,6 @@ rand_chacha = "0.9.0"
 rayon = "1.10.0"
 statrs = "0.18.0"
 
-[lint.clippy]
+[lints.clippy]
 all = "deny"
 pedantic = "deny"
