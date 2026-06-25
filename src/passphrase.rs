@@ -1,5 +1,5 @@
 use eyre::{Result, eyre};
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 pub fn new<T: Rng>(
     mut rng: T,
